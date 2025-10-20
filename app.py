@@ -181,11 +181,11 @@ async def get_search_status(search_id: int):
         raise HTTPException(status_code=404, detail="検索が見つかりません")
     
     return SearchStatus(
-        search_id=search.id,
-        status=search.status,
-        results=search.results if search.status == "completed" else None,
-        error_message=search.error_message,
-        created_at=search.created_at
+        search_id=search['id'],
+        status=search['status'],
+        results=search['results'] if search['status'] == "completed" else None,
+        error_message=search['error_message'],
+        created_at=search['created_at']
     )
 
 
@@ -199,12 +199,12 @@ async def get_search_history(limit: int = 20):
     history = []
     for search in searches:
         history.append({
-            "search_id": search.id,
-            "conditions": search.search_conditions,
-            "num_companies": search.num_companies,
-            "status": search.status,
-            "created_at": search.created_at.isoformat(),
-            "result_count": len(search.results) if search.results else 0
+            "search_id": search['id'],
+            "conditions": search['conditions'],
+            "num_companies": search['num_companies'],
+            "status": search['status'],
+            "created_at": search['created_at'],
+            "result_count": len(search['results']) if search['results'] else 0
         })
     
     return {"history": history}
@@ -218,10 +218,10 @@ async def export_results(search_id: int, format: str):
     """
     search = db_module.get_search(search_id)
     
-    if not search or not search.results:
+    if not search or not search['results']:
         raise HTTPException(status_code=404, detail="結果が見つかりません")
     
-    results = search.results
+    results = search['results']
     
     if format == "json":
         return JSONResponse(content=results)
