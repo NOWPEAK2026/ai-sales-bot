@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: ai-sales-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.18
+      - key: USE_MEMORY_DB
+        value: false
+
