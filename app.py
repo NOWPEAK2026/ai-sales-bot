@@ -5,7 +5,6 @@ AI営業アポイント自動化BOT - Webサービス版
 
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import List, Dict, Optional
@@ -15,7 +14,6 @@ import os
 
 from company_search import CompanySearch
 from keyman_finder import KeymanFinder
-from sns_finder import SNSFinder
 
 # 環境に応じてデータベースを切り替え
 if os.getenv('USE_MEMORY_DB', 'false').lower() == 'true':
@@ -30,12 +28,10 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# 静的ファイルとテンプレート
-os.makedirs("static", exist_ok=True)
-os.makedirs("templates", exist_ok=True)
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+# テンプレート設定
+import pathlib
+TEMPLATE_DIR = pathlib.Path(__file__).parent / "templates"
+templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 
 # データベース初期化
 db_module.init_db()
@@ -43,7 +39,6 @@ db_module.init_db()
 # サービスクラスのインスタンス
 company_search = CompanySearch()
 keyman_finder = KeymanFinder()
-sns_finder = SNSFinder()
 
 
 # リクエスト/レスポンスモデル

@@ -23,60 +23,89 @@ class SearchHistory(Base):
     results = Column(JSON, nullable=True)
     error_message = Column(Text, nullable=True)
 
-class Database:
-    def __init__(self, db_url: str = "sqlite:///./sales_bot.db"):
-        self.engine = create_engine(db_url, connect_args={"check_same_thread": False})
-        Base.metadata.create_all(bind=self.engine)
-        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-    
-    def get_session(self):
-        """セッションを取得"""
-        return self.SessionLocal()
-    
-    def create_search(self, conditions: str, num_companies: int):
-        """新しい検索を作成"""
-        session = self.get_session()
-        try:
-            search = SearchHistory(
-                search_conditions=conditions,
-                num_companies=num_companies,
-                status="pending"
-            )
-            session.add(search)
+# グローバルなデータベースインスタンス
+_db_instance = None
+
+def init_db(db_url: str = "sqlite:///./sales_bot.db"):
+    """データベースを初期化"""
+    global _db_instance
+    engine = create_engine(db_url, connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine)
+    _db_instance = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def _get_session():
+    """セッションを取得"""
+    if _db_instance is None:
+        init_db()
+    return _db_instance()
+
+def create_search(conditions: str, num_companies: int):
+    """新しい検索を作成"""
+    session = _get_session()
+    try:
+        search = SearchHistory(
+            search_conditions=conditions,
+            num_companies=num_companies,
+            status="pending"
+        )
+        session.add(search)
+        session.commit()
+        session.refresh(search)
+        return search.id
+    finally:
+        session.close()
+
+def update_search_status(search_id: int, status: str, results=None, error_message=None):
+    """検索ステータスを更新"""
+    session = _get_session()
+    try:
+        search = session.query(SearchHistory).filter(SearchHistory.id == search_id).first()
+        if search:
+            search.status = status
+            if results:
+                search.results = results
+            if error_message:
+                search.error_message = error_message
             session.commit()
-            session.refresh(search)
-            return search.id
-        finally:
-            session.close()
-    
-    def update_search_status(self, search_id: int, status: str, results=None, error_message=None):
-        """検索ステータスを更新"""
-        session = self.get_session()
-        try:
-            search = session.query(SearchHistory).filter(SearchHistory.id == search_id).first()
-            if search:
-                search.status = status
-                if results:
-                    search.results = results
-                if error_message:
-                    search.error_message = error_message
-                session.commit()
-        finally:
-            session.close()
-    
-    def get_search(self, search_id: int):
-        """検索を取得"""
-        session = self.get_session()
-        try:
-            return session.query(SearchHistory).filter(SearchHistory.id == search_id).first()
-        finally:
-            session.close()
-    
-    def get_all_searches(self, limit: int = 50):
-        """すべての検索を取得"""
-        session = self.get_session()
-        try:
-            return session.query(SearchHistory).order_by(SearchHistory.created_at.desc()).limit(limit).all()
-        finally:
-            session.close()
+    finally:
+        session.close()
+
+def get_search(search_id: int):
+    """検索を取得"""
+    session = _get_session()
+    try:
+        search = session.query(SearchHistory).filter(SearchHistory.id == search_id).first()
+        if search:
+            return {
+                'id': search.id,
+                'conditions': search.search_conditions,
+                'num_companies': search.num_companies,
+                'status': search.status,
+                'results': search.results,
+                'error_message': search.error_message,
+                'created_at': search.created_at.isoformat() if search.created_at else None
+            }
+        return None
+    finally:
+        session.close()
+
+def get_all_searches(limit: int = 50):
+    """すべての検索を取得"""
+    session = _get_session()
+    try:
+        searches = session.query(SearchHistory).order_by(SearchHistory.created_at.desc()).limit(limit).all()
+        return [
+            {
+                'id': s.id,
+                'conditions': s.search_conditions,
+                'num_companies': s.num_companies,
+                'status': s.status,
+                'results': s.results,
+                'error_message': s.error_message,
+                'created_at': s.created_at.isoformat() if s.created_at else None
+            }
+            for s in searches
+        ]
+    finally:
+        session.close()
 

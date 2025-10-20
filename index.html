@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI営業アポイント自動化BOT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+        
+        .search-form {
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            background-color: white;
+        }
+        
+        .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            padding-right: 45px;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group select:hover {
+            border-color: #764ba2;
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 25px;
+            display: none;
+        }
+        
+        .status-card.show {
+            display: block;
+        }
+        
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-text {
+            font-size: 1.1em;
+            color: #333;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .results-table.show {
+            display: table;
+        }
+        
+        .results-table th,
+        .results-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .results-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        
+        .results-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .company-info {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        
+        .company-name {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .info-value {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .keyman-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .keyman-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .keyman-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .keyman-position {
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        .sns-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .sns-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9em;
+            padding: 5px 15px;
+            border: 1px solid #667eea;
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+        
+        .sns-link:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .export-btn {
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .export-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .main-card {
+                padding: 20px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI営業アポイント自動化BOT</h1>
+            <p>企業リストアップ・役員/責任者特定を自動化</p>
+        </div>
+        
+        <div class="main-card">
+            <div class="search-form">
+                <h2 style="margin-bottom: 20px; color: #333;">検索条件を入力</h2>
+                
+                <form id="searchForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="industry">🏢 業界 *</label>
+                            <select id="industry" name="industry" required>
+                                <option value="">業界を選択してください</option>
+                                <option value="beauty">美容・化粧品</option>
+                                <option value="it_saas">IT・SaaS</option>
+                                <option value="realestate">不動産</option>
+                                <option value="fintech">金融・フィンテック</option>
+                                <option value="healthcare">ヘルスケア・医療</option>
+                                <option value="retail">小売・Eコマース</option>
+                                <option value="manufacturing">製造業</option>
+                                <option value="food">飲食・食品</option>
+                                <option value="education">教育・EdTech</option>
+                                <option value="logistics">物流</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="revenue">💰 売上規模 *</label>
+                            <select id="revenue" name="revenue" required>
+                                <option value="">売上規模を選択してください</option>
+                                <option value="under10">10億円未満</option>
+                                <option value="10to30">10億円以上30億円未満</option>
+                                <option value="30to50">30億円以上50億円未満</option>
+                                <option value="50to100">50億円以上100億円未満</option>
+                                <option value="over100">100億円以上</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="keywords">🔍 追加キーワード（任意）</label>
+                        <input 
+                            type="text" 
+                            id="keywords" 
+                            name="keywords" 
+                            placeholder="例: D2C、スタートアップ、東京、シリーズA"
+                        >
+                        <small style="color: #666; font-size: 0.9em; margin-top: 5px; display: block;">
+                            より詳細な条件を指定したい場合に入力してください
+                        </small>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="numCompanies">📊 企業数</label>
+                            <input 
+                                type="number" 
+                                id="numCompanies" 
+                                name="numCompanies" 
+                                value="5" 
+                                min="1" 
+                                max="100"
+                            >
+                            <small style="color: #666; font-size: 0.9em; margin-top: 5px; display: block;">
+                                最大100社まで取得可能です
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="maxKeymen">👥 役員・責任者数/企業</label>
+                            <input 
+                                type="number" 
+                                id="maxKeymen" 
+                                name="maxKeymen" 
+                                value="5" 
+                                min="1" 
+                                max="10"
+                            >
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn" id="submitBtn">
+                        🔍 検索を開始
+                    </button>
+                </form>
+            </div>
+            
+            <div class="status-card" id="statusCard">
+                <div class="status-header">
+                    <div class="spinner" id="spinner"></div>
+                    <div class="status-text" id="statusText">検索を準備中...</div>
+                </div>
+                <div id="alertContainer"></div>
+            </div>
+            
+            <div id="resultsContainer"></div>
+        </div>
+    </div>
+    
+    <script>
+        let currentSearchId = null;
+        let pollInterval = null;
+        
+        // フォーム送信
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const statusCard = document.getElementById('statusCard');
+            const spinner = document.getElementById('spinner');
+            const statusText = document.getElementById('statusText');
+            const resultsContainer = document.getElementById('resultsContainer');
+            
+            // UIをリセット
+            submitBtn.disabled = true;
+            submitBtn.textContent = '検索中...';
+            statusCard.classList.add('show');
+            spinner.style.display = 'block';
+            statusText.textContent = '検索を開始しています...';
+            resultsContainer.innerHTML = '';
+            
+            // フォームデータを取得
+            const industry = document.getElementById('industry').value;
+            const revenue = document.getElementById('revenue').value;
+            const keywords = document.getElementById('keywords').value;
+            
+            // 業界と売上規模のラベルを取得
+            const industryLabel = document.querySelector(`#industry option[value="${industry}"]`).textContent;
+            const revenueLabel = document.querySelector(`#revenue option[value="${revenue}"]`).textContent;
+            
+            const formData = {
+                industry: industry,
+                revenue: revenue,
+                keywords: keywords,
+                num_companies: parseInt(document.getElementById('numCompanies').value),
+                max_keymen: parseInt(document.getElementById('maxKeymen').value)
+            };
+            
+            try {
+                // 検索を開始
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                currentSearchId = data.search_id;
+                
+                // ステータスをポーリング
+                pollInterval = setInterval(checkStatus, 2000);
+                
+            } catch (error) {
+                showAlert('エラーが発生しました: ' + error.message, 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🔍 検索を開始';
+                spinner.style.display = 'none';
+            }
+        });
+        
+        // ステータスチェック
+        async function checkStatus() {
+            try {
+                const response = await fetch(`/api/status?id=${currentSearchId}`);
+                const data = await response.json();
+                
+                const statusText = document.getElementById('statusText');
+                const spinner = document.getElementById('spinner');
+                const submitBtn = document.getElementById('submitBtn');
+                
+                if (data.status === 'processing') {
+                    statusText.textContent = '企業情報と役員・責任者を検索中...';
+                }
+                else if (data.status === 'completed') {
+                    clearInterval(pollInterval);
+                    spinner.style.display = 'none';
+                    statusText.textContent = '✅ 検索が完了しました！';
+                    showAlert(`${data.results.length} 件の役員・責任者情報を取得しました`, 'success');
+                    displayResults(data.results);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '🔍 検索を開始';
+                }
+                else if (data.status === 'failed') {
+                    clearInterval(pollInterval);
+                    spinner.style.display = 'none';
+                    statusText.textContent = '❌ 検索に失敗しました';
+                    showAlert('エラー: ' + data.error_message, 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '🔍 検索を開始';
+                }
+            } catch (error) {
+                clearInterval(pollInterval);
+                showAlert('ステータス確認中にエラーが発生しました', 'error');
+            }
+        }
+        
+        // 結果を表示
+        function displayResults(results) {
+            const container = document.getElementById('resultsContainer');
+            
+            if (!results || results.length === 0) {
+                container.innerHTML = '<p>結果がありません。</p>';
+                return;
+            }
+            
+            // 企業ごとにグループ化
+            const companiesMap = {};
+            results.forEach(result => {
+                const companyName = result['企業名'];
+                if (!companiesMap[companyName]) {
+                    companiesMap[companyName] = {
+                        info: result,
+                        keymen: []
+                    };
+                }
+                companiesMap[companyName].keymen.push(result);
+            });
+            
+            // HTML生成
+            let html = '<h2 style="margin-top: 30px; margin-bottom: 20px;">検索結果</h2>';
+            
+            // エクスポートボタン
+            html += `
+                <div class="export-buttons">
+                    <button class="export-btn" onclick="exportResults('csv')">📊 CSVでダウンロード</button>
+                    <button class="export-btn" onclick="exportResults('tsv')">📋 TSVでダウンロード</button>
+                    <button class="export-btn" onclick="exportResults('json')">💾 JSONでダウンロード</button>
+                    <button class="export-btn" onclick="copyToClipboard()">📋 TSVをコピー</button>
+                </div>
+            `;
+            
+            // 企業ごとに表示
+            Object.values(companiesMap).forEach((company, index) => {
+                const info = company.info;
+                
+                html += `
+                    <div class="company-info">
+                        <div class="company-name">${index + 1}. ${info['企業名']}</div>
+                        
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">🌐 URL</span>
+                                <span class="info-value"><a href="${info['企業URL']}" target="_blank">${info['企業URL']}</a></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">📅 設立年</span>
+                                <span class="info-value">${info['設立年'] || '-'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">💰 売上</span>
+                                <span class="info-value">${info['売上'] || '-'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">📊 利益</span>
+                                <span class="info-value">${info['利益'] || '-'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">👥 従業員</span>
+                                <span class="info-value">${info['従業員規模'] || '-'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">🏢 事業領域</span>
+                                <span class="info-value">${info['事業領域'] || '-'}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item" style="margin-top: 10px;">
+                            <span class="info-label">🎯 注力ポイント</span>
+                            <span class="info-value">${info['注力ポイント'] || '-'}</span>
+                        </div>
+                        
+                        <div class="info-item" style="margin-top: 10px;">
+                            <span class="info-label">📝 事業概要</span>
+                            <span class="info-value">${info['事業概要']}</span>
+                        </div>
+                        
+                        <h4 style="margin-top: 20px; margin-bottom: 10px;">役員・責任者一覧</h4>
+                `;
+                
+                company.keymen.forEach(keyman => {
+                    html += `
+                        <div class="keyman-card">
+                            <div class="keyman-header">
+                                <div class="keyman-name">${keyman['キーマン氏名']}</div>
+                                <div class="keyman-position">${keyman['役職名']}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // エクスポート
+        async function exportResults(format) {
+            if (!currentSearchId) return;
+            
+            window.location.href = `/api/export/${currentSearchId}/${format}`;
+        }
+        
+        // クリップボードにコピー
+        async function copyToClipboard() {
+            if (!currentSearchId) return;
+            
+            try {
+                const response = await fetch(`/api/export/${currentSearchId}/tsv`);
+                const text = await response.text();
+                
+                await navigator.clipboard.writeText(text);
+                showAlert('TSV形式でクリップボードにコピーしました！Excelに貼り付けできます。', 'success');
+            } catch (error) {
+                showAlert('コピーに失敗しました: ' + error.message, 'error');
+            }
+        }
+        
+        // アラート表示
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alertClass = type === 'error' ? 'alert-error' : 'alert-success';
+            container.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
+
