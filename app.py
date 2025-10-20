@@ -262,6 +262,14 @@ async def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
 
+# Vercel用ハンドラー
+try:
+    from mangum import Mangum
+    handler = Mangum(app, lifespan="off")
+except ImportError:
+    handler = None
+
+
 if __name__ == "__main__":
     print("=" * 70)
     print(" AI営業アポイント自動化BOT - Webサービス")
