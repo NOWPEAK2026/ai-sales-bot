@@ -101,7 +101,6 @@ def perform_search(search_id: int, industry: str, revenue: str, keywords: str, n
             for keyman in keymen:
                 result_row = {
                     '企業名': company['企業名'],
-                    '企業URL': company['企業URL'],
                     '事業概要': company['事業概要'],
                     '設立年': company.get('設立年', ''),
                     '売上': company.get('売上', ''),
