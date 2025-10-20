@@ -84,7 +84,7 @@ def perform_search(search_id: int, industry: str, revenue: str, keywords: str, n
         if not companies:
             error_msg = "企業が見つかりませんでした。検索条件を変更してください。"
             print(f"[Search {search_id}] エラー: {error_msg}")
-            db.update_search_status(search_id, "failed", error_message=error_msg)
+            db_module.update_search_status(search_id, "failed", error_message=error_msg)
             return
         
         # 各企業について役員・責任者を検索
@@ -117,14 +117,14 @@ def perform_search(search_id: int, industry: str, revenue: str, keywords: str, n
         
         # 結果を保存して完了
         print(f"[Search {search_id}] 完了: {len(results)}件の役員・責任者情報を取得")
-        db.update_search_status(search_id, "completed", results=results)
+        db_module.update_search_status(search_id, "completed", results=results)
     
     except Exception as e:
         # エラーが発生した場合
         import traceback
         error_message = f"{str(e)}\n{traceback.format_exc()}"
         print(f"[Search {search_id}] エラー発生:\n{error_message}")
-        db.update_search_status(search_id, "failed", error_message=str(e))
+        db_module.update_search_status(search_id, "failed", error_message=str(e))
 
 
 # APIエンドポイント
@@ -148,7 +148,7 @@ async def create_search(search_request: SearchRequest, background_tasks: Backgro
         conditions_text += f", キーワード: {search_request.keywords}"
     
     # データベースに検索を作成
-    search_id = db.create_search(
+    search_id = db_module.create_search(
         conditions_text,
         search_request.num_companies
     )
@@ -175,7 +175,7 @@ async def get_search_status(search_id: int):
     """
     検索のステータスと結果を取得
     """
-    search = db.get_search(search_id)
+    search = db_module.get_search(search_id)
     
     if not search:
         raise HTTPException(status_code=404, detail="検索が見つかりません")
@@ -194,7 +194,7 @@ async def get_search_history(limit: int = 20):
     """
     検索履歴を取得
     """
-    searches = db.get_all_searches(limit)
+    searches = db_module.get_all_searches(limit)
     
     history = []
     for search in searches:
@@ -216,7 +216,7 @@ async def export_results(search_id: int, format: str):
     結果を指定されたフォーマットでエクスポート
     format: csv, json, tsv
     """
-    search = db.get_search(search_id)
+    search = db_module.get_search(search_id)
     
     if not search or not search.results:
         raise HTTPException(status_code=404, detail="結果が見つかりません")
