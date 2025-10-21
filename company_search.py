@@ -402,8 +402,9 @@ class CompanySearch:
             new_url = f"https://example-{variation_index}-{url_slug[:20]}.com"
             
             # 売上・従業員・設立年を生成
-            rev_min, rev_max = random.choice(revenue_ranges)
-            revenue = random.randint(rev_min, rev_max)
+            # ベース企業の売上規模を保持（±10%の範囲でバリエーション）
+            base_revenue = base.get('revenue_value', 50)
+            revenue = int(base_revenue * random.uniform(0.9, 1.1))
             profit_rate = random.uniform(0.05, 0.15)
             profit = round(revenue * profit_rate, 1)
             
