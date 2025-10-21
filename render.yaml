@@ -2,11 +2,10 @@ services:
   - type: web
     name: ai-sales-bot
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    python: "3.9"
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.9.18
       - key: USE_MEMORY_DB
-        value: false
+        value: "false"
 

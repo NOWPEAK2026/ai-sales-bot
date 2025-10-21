@@ -261,23 +261,16 @@ async def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
 
-# Vercel用ハンドラー
-try:
-    from mangum import Mangum
-    handler = Mangum(app, lifespan="off")
-except ImportError:
-    handler = None
-
-
 if __name__ == "__main__":
+    port = int(os.getenv("PORT", 8000))
     print("=" * 70)
     print(" AI営業アポイント自動化BOT - Webサービス")
     print("=" * 70)
-    print("\nサーバーを起動しています...")
-    print("URL: http://localhost:8000")
-    print("API ドキュメント: http://localhost:8000/docs")
+    print(f"\nサーバーを起動しています... ポート: {port}")
+    print(f"URL: http://localhost:{port}")
+    print(f"API ドキュメント: http://localhost:{port}/docs")
     print("\n終了するには Ctrl+C を押してください")
     print("=" * 70 + "\n")
     
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
 
